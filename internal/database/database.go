@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"xquant-default-management/internal/config"
+	"xquant-default-management/internal/core"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -25,4 +26,10 @@ func Connect(cfg config.Config) {
 	}
 
 	log.Println("Database connection established")
+	// 自动迁移模型
+	err = DB.AutoMigrate(&core.User{})
+	if err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+	log.Println("Database migrated")
 }
