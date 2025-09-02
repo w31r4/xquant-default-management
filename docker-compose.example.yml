@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:13-alpine
+    container_name: xquant_postgres_db
+    environment:
+      POSTGRES_USER: YOUR_USER_NAME
+      POSTGRES_PASSWORD: YOUR_PASSWORD
+      POSTGRES_DB: xquant_default_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

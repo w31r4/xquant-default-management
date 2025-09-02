@@ -1,0 +1,8 @@
+SERVER_PORT: "8080"
+DB_HOST: "localhost"
+DB_PORT: "5432"
+DB_USER: "postgres"
+DB_PASSWORD: "<YOUR_DB_PASSWORD>" 
+DB_NAME: "xquant_default_db"
+JWT_SECRET: "<YOUR_JWT_SECRET_KEY>" 
+TOKEN_TTL: 24 # in hours

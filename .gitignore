@@ -1,0 +1,64 @@
+# ========================
+# IDE / Editor Config
+# ========================
+# VSCode
+.vscode/
+
+# JetBrains/GoLand
+.idea/
+
+
+# ========================
+# Binaries and Builds
+# ========================
+# Go build output (the executable file)
+# 假设你的 main.go 在 cmd/server/ 下，编译后可能会在根目录生成 server.exe 或 server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server  # 假设编译后的可执行文件名是 server
+
+# Test files
+*.test
+
+
+# ========================
+# OS Generated Files
+# ========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# ========================
+# Configs & Environment
+# ========================
+# 忽略所有 .env 文件和本地配置文件
+# 最佳实践是把 config.yaml 作为模板提交，但把包含真实密码的本地文件忽略
+.env
+.env.*
+!.env.example
+config.local.yaml
+config.yaml
+docker-compose.yml
+# ========================
+# Logs & Temp Files
+# ========================
+*.log
+*.tmp
+*.temp
+
+
+# ========================
+# Go Dependencies
+# ========================
+# 虽然 go.mod 和 go.sum 应该提交，但一些老的工具可能会产生 vendor 目录
+vendor/
