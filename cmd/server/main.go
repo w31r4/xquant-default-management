@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"xquant-default-management/internal/config"
 	"xquant-default-management/internal/database"
 	"xquant-default-management/internal/handler"
@@ -29,11 +30,21 @@ func main() {
 	// 3. 依赖注入：将所有组件连接起来
 	// Repository -> Service -> Handler
 	// 将组件一步步链接
+	// Repositories
+
 	userRepository := repository.NewUserRepository(db)
-	// 将 cfg 传递给 UserService
+	customerRepository := repository.NewCustomerRepository(db) // 新增
+	appRepository := repository.NewApplicationRepository(db)   // 新增
+
+	// Services
 
 	userService := service.NewUserService(userRepository, cfg)
+	// 将 cfg 传递给 UserService
+	appService := service.NewApplicationService(appRepository, customerRepository) // 新增
+
+	// Handlers
 	userHandler := handler.NewUserHandler(userService)
+	appHandler := handler.NewApplicationHandler(appService) // 新增
 
 	// 4. 初始化 Gin 引擎
 	router := gin.Default()
@@ -66,7 +77,30 @@ func main() {
 					"user_id": userID.(uuid.UUID).String(),
 					"role":    role.(string),
 				})
+
 			})
+
+			// 新增一个彩蛋路由
+			protected.GET("/easter-egg", func(c *gin.Context) {
+				// 我们可以从上下文中获取用户信息，让彩蛋更个性化
+				userID, _ := c.Get("userID")
+
+				// 把 UUID 转换成字符串，只取第一部分，让它看起来像个代号
+				userIDStr := userID.(uuid.UUID).String()
+				agentCode := strings.Split(userIDStr, "-")[0]
+
+				c.JSON(http.StatusOK, gin.H{
+					"message":        "Congratulations, Agent " + agentCode + "!",
+					"secret_mission": "Find the hidden rubber duck in the repository.",
+				})
+			})
+			// 申请相关路由
+			applications := protected.Group("/applications")
+			{
+				// 只有 'Applicant' 角色的用户才能提交申请
+				applications.POST("", middleware.RBACMiddleware("Applicant"), appHandler.CreateApplication)
+			}
+
 		}
 	}
 

@@ -11,6 +11,7 @@ import (
 )
 
 // UserService 定义了用户相关的业务逻辑接口
+// Service 层的价值：它定义了这些截然不同的业务流程，并正确地编排了对底层 Repository 和 Utils 的调用。
 type UserService interface {
 	Register(username, password, role string) (*core.User, error)
 	Login(username, password string) (string, error) // 新增

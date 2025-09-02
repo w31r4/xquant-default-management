@@ -29,11 +29,14 @@ func GenerateToken(userID uuid.UUID, role string, cfg config.Config) (string, er
 			Issuer:    "xquant-default-management",
 		},
 	}
+	//根据用户信息创建用户声明，确认用户组和用户 ID
 
 	// 使用 HS256 签名算法创建一个新的 token 对象
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	//根据用户声明创建 token
 
 	// 使用我们在配置中定义的 secret 来签名 token
+	//对 token 签名
 	tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
 	if err != nil {
 		return "", err

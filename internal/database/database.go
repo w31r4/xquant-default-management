@@ -27,7 +27,7 @@ func Connect(cfg config.Config) {
 
 	log.Println("Database connection established")
 	// 自动迁移模型
-	err = DB.AutoMigrate(&core.User{})
+	err = DB.AutoMigrate(&core.User{}, &core.Customer{}, &core.DefaultApplication{}) // 新增
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
