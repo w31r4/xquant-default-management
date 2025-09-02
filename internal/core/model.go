@@ -38,19 +38,36 @@ type Customer struct {
 	IsDefault bool   `gorm:"default:false;index"`
 }
 
-// DefaultApplication 违约认定申请
+// DefaultApplication 代表一条客户违约认定的申请记录。
+// 它是系统中的核心业务实体，记录了从申请提交到审批的全过程。
 type DefaultApplication struct {
+	// BaseModel 嵌入基础模型 (ID, CreatedAt, UpdatedAt, DeletedAt)。
 	BaseModel
+
+	// CustomerID 关联的客户 ID，明确指出此申请是针对哪个客户。
 	CustomerID uuid.UUID `gorm:"type:uuid;not null;index"`
-	Customer   Customer  `gorm:"foreignKey:CustomerID"`
+	// Customer 关联的客户实体 (用于 GORM 预加载客户的详细信息)。
+	Customer Customer `gorm:"foreignKey:CustomerID"`
 
-	Status        string `gorm:"size:50;not null;index;default:'Pending'"` // Pending, Approved, Rejected
-	Severity      string `gorm:"size:50;not null"`                         // High, Medium, Low
+	// Status 申请的当前状态。
+	// 可选值：Pending (待处理), Approved (已批准), Rejected (已拒绝)。
+	Status string `gorm:"size:50;not null;index;default:'Pending'"`
+
+	// Severity 违约事件的严重等级，用于风险评估。
+	// 可选值：High (高), Medium (中), Low (低)。
+	Severity string `gorm:"size:50;not null"`
+
+	// DefaultReason 提交违约认定的主要原因，是审批的重要依据。
 	DefaultReason string `gorm:"type:text;not null"`
-	Remarks       string `gorm:"type:text"`
 
+	// Remarks 申请人填写的额外备注信息 (可选)。
+	Remarks string `gorm:"type:text"`
+
+	// ApplicantID 提交此申请的用户的 ID (即申请人)。
 	ApplicantID uuid.UUID `gorm:"type:uuid;not null"`
-	Applicant   User      `gorm:"foreignKey:ApplicantID"`
+	// Applicant 关联的申请人实体 (用于 GORM 预加载申请人的详细信息)。
+	Applicant User `gorm:"foreignKey:ApplicantID"`
 
+	// ApplicationTime 申请被正式提交的时间戳。
 	ApplicationTime time.Time `gorm:"not null"`
 }
