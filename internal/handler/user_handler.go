@@ -43,3 +43,20 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, res)
 }
+
+// Login 处理用户登录请求
+func (h *UserHandler) Login(c *gin.Context) {
+	var req api.LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.userService.Login(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, api.LoginResponse{Token: token})
+}

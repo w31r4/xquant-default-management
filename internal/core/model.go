@@ -1,10 +1,9 @@
 package core
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"time"
 )
 
 // BaseModel 包含所有模型共有的字段，如文档 3.1 节所定义

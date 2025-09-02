@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"xquant-default-management/internal/config"
 	"xquant-default-management/internal/core"
 	"xquant-default-management/internal/repository"
 	"xquant-default-management/internal/utils"
@@ -12,15 +13,18 @@ import (
 // UserService 定义了用户相关的业务逻辑接口
 type UserService interface {
 	Register(username, password, role string) (*core.User, error)
+	Login(username, password string) (string, error) // 新增
+
 }
 
 type userService struct {
 	userRepo repository.UserRepository
+	cfg      config.Config // 新增，用于访问 JWT Secret 和 TTL
 }
 
-// NewUserService 创建一个新的 UserService 实例
-func NewUserService(userRepo repository.UserRepository) UserService {
-	return &userService{userRepo: userRepo}
+// NewUserService 修改构造函数以接收配置
+func NewUserService(userRepo repository.UserRepository, cfg config.Config) UserService {
+	return &userService{userRepo: userRepo, cfg: cfg}
 }
 
 func (s *userService) Register(username, password, role string) (*core.User, error) {
@@ -52,4 +56,29 @@ func (s *userService) Register(username, password, role string) (*core.User, err
 	}
 
 	return user, nil
+}
+
+// Login 验证用户凭据并返回 JWT
+func (s *userService) Login(username, password string) (string, error) {
+	// 1. 根据用户名查找用户
+	user, err := s.userRepo.GetByUsername(username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.New("invalid username or password")
+		}
+		return "", err
+	}
+
+	// 2. 检查密码是否匹配
+	if !utils.CheckPasswordHash(password, user.Password) {
+		return "", errors.New("invalid username or password")
+	}
+
+	// 3. 生成 JWT
+	token, err := utils.GenerateToken(user.ID, user.Role, s.cfg)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
