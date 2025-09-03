@@ -18,7 +18,9 @@ import (
 type ApplicationService interface {
 	// CreateApplication 定义了创建新违约申请的业务流程。
 	CreateApplication(customerName, severity, reason, remarks string, applicantID uuid.UUID) (*core.DefaultApplication, error)
-	ApproveApplication(appID, approverID uuid.UUID) error // ApplicationService 接口增加 ApproveApplication 方法
+	ApproveApplication(appID, approverID uuid.UUID) error               // ApplicationService 接口增加 ApproveApplication 方法
+	RejectApplication(appID, approverID uuid.UUID, reason string) error // 新增
+	GetPendingApplications() ([]core.DefaultApplication, error)         // 新增
 
 }
 
@@ -150,4 +152,51 @@ func (s *applicationService) ApproveApplication(appID, approverID uuid.UUID) err
 		return nil
 
 	})
+}
+
+// RejectApplication 拒绝一个违约申请
+func (s *applicationService) RejectApplication(appID, approverID uuid.UUID, reason string) error {
+	// 即使只更新一张表，使用事务也是一个好习惯，可以保持代码风格一致性
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		txAppRepo := repository.NewApplicationRepository(tx)
+
+		// 1. 获取申请单
+		app, err := txAppRepo.GetByID(appID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("application not found")
+			}
+			return err
+		}
+
+		// 2. 检查状态
+		if app.Status != "Pending" {
+			return errors.New("application is not in pending state")
+		}
+
+		// 3. 更新申请单状态
+		now := time.Now()
+		app.Status = "Rejected"
+		app.ApproverID = &approverID
+		app.ApprovalTime = &now
+		app.RejectionReason = reason // 记录拒绝原因
+		// 需要更新的数据库列名列表
+		updateFields := []string{
+			"Status",
+			"ApproverID",
+			"ApprovalTime",
+			"RejectionReason",
+		}
+		// 使用我们之前优化的、更安全的 Update 方法
+		if err := txAppRepo.Update(app, updateFields...); err != nil {
+			return err // 事务将回滚
+		}
+
+		return nil // 事务将提交
+	})
+}
+
+// GetPendingApplications 获取所有待处理的申请
+func (s *applicationService) GetPendingApplications() ([]core.DefaultApplication, error) {
+	return s.appRepo.FindAllByStatus("Pending")
 }

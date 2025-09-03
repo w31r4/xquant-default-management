@@ -77,7 +77,7 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		CustomerName:    app.Customer.Name,
 		Status:          app.Status,
 		Severity:        app.Severity,
-		ApplicantID:     app.ApplicantID.String(),
+		ApplicantName:   app.Applicant.Username, // 同上
 		ApplicationTime: app.ApplicationTime,
 	}
 
@@ -122,4 +122,57 @@ func (h *ApplicationHandler) ApproveApplication(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Application approved successfully"})
+}
+
+// RejectApplication 处理拒绝申请的请求
+func (h *ApplicationHandler) RejectApplication(c *gin.Context) {
+	var req api.RejectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	appID, _ := uuid.Parse(req.ApplicationID)
+	approverIDVal, _ := c.Get("userID")
+	approverID := approverIDVal.(uuid.UUID)
+
+	err := h.appService.RejectApplication(appID, approverID, req.RejectionReason)
+	if err != nil {
+		// 错误处理逻辑与 Approve 类似
+		switch err.Error() {
+		case "application not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "application is not in pending state":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reject application"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Application rejected successfully"})
+}
+
+// GetPendingApplications 处理查询待审批列表的请求
+func (h *ApplicationHandler) GetPendingApplications(c *gin.Context) {
+	apps, err := h.appService.GetPendingApplications()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve pending applications"})
+		return
+	}
+
+	// 将数据库模型列表映射到 API DTO 列表
+	var res []api.ApplicationResponse
+	for _, app := range apps {
+		res = append(res, api.ApplicationResponse{
+			ID:              app.ID.String(),
+			CustomerName:    app.Customer.Name, // 因为 Service->Repo 预加载了，这里可以直接用
+			Status:          app.Status,
+			Severity:        app.Severity,
+			ApplicantName:   app.Applicant.Username, // 同上
+			ApplicationTime: app.ApplicationTime,
+		})
+	}
+
+	c.JSON(http.StatusOK, res)
 }

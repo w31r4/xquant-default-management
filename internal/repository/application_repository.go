@@ -22,6 +22,8 @@ type ApplicationRepository interface {
 	GetByID(id uuid.UUID) (*core.DefaultApplication, error) // 新增
 	// Update(app *core.DefaultApplication, updates map[string]interface{}) error // 修改接口
 	Update(app *core.DefaultApplication, fields ...string) error
+	FindAllByStatus(status string) ([]core.DefaultApplication, error) // 新增
+
 }
 
 // applicationRepository 是 ApplicationRepository 接口的具体实现。
@@ -79,4 +81,12 @@ func (r *applicationRepository) GetByID(id uuid.UUID) (*core.DefaultApplication,
 // Update 只更新指定的字段
 func (r *applicationRepository) Update(app *core.DefaultApplication, fields ...string) error {
 	return r.db.Model(app).Select(fields).Updates(app).Error
+}
+
+// FindAllByStatus 根据状态查找所有申请单
+func (r *applicationRepository) FindAllByStatus(status string) ([]core.DefaultApplication, error) {
+	var apps []core.DefaultApplication
+	// 为了在列表中显示客户和申请人信息，我们必须在这里预加载它们
+	err := r.db.Preload("Customer").Preload("Applicant").Where("status = ?", status).Find(&apps).Error
+	return apps, err
 }

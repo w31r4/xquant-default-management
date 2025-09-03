@@ -58,7 +58,8 @@ type DefaultApplication struct {
 	Severity string `gorm:"size:50;not null"`
 
 	// DefaultReason 提交违约认定的主要原因，是审批的重要依据。
-	DefaultReason string `gorm:"type:text;not null"`
+	DefaultReason   string `gorm:"type:text;not null"`
+	RejectionReason string `gorm:"type:text"` // 新增：用于存储拒绝原因
 
 	// Remarks 申请人填写的额外备注信息 (可选)。
 	Remarks string `gorm:"type:text"`
@@ -67,9 +68,9 @@ type DefaultApplication struct {
 	ApplicantID uuid.UUID `gorm:"type:uuid;not null"`
 	// Applicant 关联的申请人实体 (用于 GORM 预加载申请人的详细信息)。
 	Applicant User `gorm:"foreignKey:ApplicantID"`
-		// --- 新增字段 ---
-	ApproverID  *uuid.UUID `gorm:"type:uuid"` // 审核人 ID, 使用指针类型以允许 NULL 值
-	Approver    *User      `gorm:"foreignKey:ApproverID"` // 关联到 User 模型
+	// --- 新增字段 ---
+	ApproverID   *uuid.UUID `gorm:"type:uuid"`             // 审核人 ID, 使用指针类型以允许 NULL 值
+	Approver     *User      `gorm:"foreignKey:ApproverID"` // 关联到 User 模型
 	ApprovalTime *time.Time // 审核时间，使用指针类型以允许 NULL 值
 
 	// ApplicationTime 申请被正式提交的时间戳。

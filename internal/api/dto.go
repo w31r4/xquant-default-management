@@ -74,7 +74,8 @@ type ApplicationResponse struct {
 	// Severity 是违约事件的严重等级。
 	Severity string `json:"severity"`
 	// ApplicantID 是提交此申请的用户的 ID。
-	ApplicantID string `json:"applicant_id"`
+	// ApplicantID string `json:"applicant_id"`
+	ApplicantName string `json:"applicant_name"` // 新增
 	// ApplicationTime 是申请被提交的时间。
 	ApplicationTime time.Time `json:"application_time"`
 }
@@ -82,4 +83,10 @@ type ApplicationResponse struct {
 // ApproveRequest 代表审核操作的请求体
 type ApproveRequest struct {
 	ApplicationID string `json:"application_id" binding:"required,uuid"`
+}
+
+// RejectRequest 代表拒绝操作的请求体
+type RejectRequest struct {
+	ApplicationID   string `json:"application_id" binding:"required,uuid"`
+	RejectionReason string `json:"rejection_reason" binding:"required"`
 }

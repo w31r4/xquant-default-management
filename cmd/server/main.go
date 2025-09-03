@@ -129,12 +129,16 @@ func main() {
 				// 2. 针对此路由单独应用的 RBACMiddleware (保安 B - 授权)，确保用户角色是 'Applicant'。
 				// 中间件会按照定义的顺序依次执行。
 				applications.POST("", middleware.RBACMiddleware("Applicant"), appHandler.CreateApplication)
+				// 新增：Approver 查询待审批列表的端点
+				applications.GET("/pending", middleware.RBACMiddleware("Approver"), appHandler.GetPendingApplications)
 				// --- 新增审批路由 ---
 				// 将审批相关的路由分组到 /review 下，更符合 RESTful 风格
 				review := applications.Group("/review")
 				review.Use(middleware.RBACMiddleware("Approver")) // 只有 Approver 角色能访问
 				{
 					review.POST("/approve", appHandler.ApproveApplication)
+					review.POST("/reject", appHandler.RejectApplication) // 新增
+
 				}
 			}
 		}
