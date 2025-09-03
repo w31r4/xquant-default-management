@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
+        "dbname",
         "gorm",
+        "sslmode",
         "xquant"
     ]
 }

@@ -67,6 +67,10 @@ type DefaultApplication struct {
 	ApplicantID uuid.UUID `gorm:"type:uuid;not null"`
 	// Applicant 关联的申请人实体 (用于 GORM 预加载申请人的详细信息)。
 	Applicant User `gorm:"foreignKey:ApplicantID"`
+		// --- 新增字段 ---
+	ApproverID  *uuid.UUID `gorm:"type:uuid"` // 审核人 ID, 使用指针类型以允许 NULL 值
+	Approver    *User      `gorm:"foreignKey:ApproverID"` // 关联到 User 模型
+	ApprovalTime *time.Time // 审核时间，使用指针类型以允许 NULL 值
 
 	// ApplicationTime 申请被正式提交的时间戳。
 	ApplicationTime time.Time `gorm:"not null"`

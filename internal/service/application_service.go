@@ -18,6 +18,8 @@ import (
 type ApplicationService interface {
 	// CreateApplication 定义了创建新违约申请的业务流程。
 	CreateApplication(customerName, severity, reason, remarks string, applicantID uuid.UUID) (*core.DefaultApplication, error)
+	ApproveApplication(appID, approverID uuid.UUID) error // ApplicationService 接口增加 ApproveApplication 方法
+
 }
 
 // applicationService 是 ApplicationService 接口的具体实现。
@@ -25,12 +27,13 @@ type ApplicationService interface {
 type applicationService struct {
 	appRepo      repository.ApplicationRepository
 	customerRepo repository.CustomerRepository
+	db           *gorm.DB // 新增一个 db 字段用于事务
 }
 
 // NewApplicationService 是 applicationService 的构造函数。
 // 通过依赖注入的方式，传入所需的 Repository 实例。
-func NewApplicationService(appRepo repository.ApplicationRepository, customerRepo repository.CustomerRepository) ApplicationService {
-	return &applicationService{appRepo: appRepo, customerRepo: customerRepo}
+func NewApplicationService(db *gorm.DB, appRepo repository.ApplicationRepository, customerRepo repository.CustomerRepository) ApplicationService {
+	return &applicationService{db: db, appRepo: appRepo, customerRepo: customerRepo}
 }
 
 // CreateApplication 实现了创建新违约申请的核心业务逻辑。
@@ -87,6 +90,64 @@ func (s *applicationService) CreateApplication(customerName, severity, reason, r
 
 	// 6. 成功创建后，返回新生成的申请实体指针和 nil 错误。
 	// 返回的 app 对象将包含由数据库生成的 ID 和时间戳等信息。
-	app.Customer = *customer // 把我们第一步查出来的 customer 对象，手动塞进 app 的 "容器" 里
+
 	return app, nil
+}
+
+// ApproveApplication 批准一个违约申请
+//批准一个违约申请需要修改客户的状态 isDefault 和修改申请单的状态
+//申请单需要修改"status", "approver_id", "approval_time"
+
+func (s *applicationService) ApproveApplication(appID, approverID uuid.UUID) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		txAppRepo := repository.NewApplicationRepository(tx)
+		//建立新的申请处理仓管
+		txCustomerRepo := repository.NewCustomerRepository(tx)
+		//建立新的顾客仓管
+
+		// 1. 获取申请单，它已经包含了 Customer 信息
+		app, err := txAppRepo.GetByID(appID)
+		//再 GetByID 中，*customer 容器被填充
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("application not found")
+			}
+			return err
+		}
+
+		// 2. 检查申请单状态
+		if app.Status != "Pending" {
+			return errors.New("application is not in pending state")
+		}
+
+		// --- 关键修改在这里 ---
+		// 3. 直接使用预加载的 Customer 对象
+		// 我们需要先检查一下 Customer 是否真的被加载了，这是一个好的防御性编程习惯
+		if app.Customer.ID == uuid.Nil {
+			return errors.New("customer data is missing in the application")
+		}
+		customer := &app.Customer // 直接获取指针
+
+		// 4. 先更新客户状态
+		customer.IsDefault = true
+		if err := txCustomerRepo.Update(customer); err != nil {
+			return err // 如果这里失败，事务回滚
+		}
+		app.Customer = core.Customer{} // 或者 app.Customer = *new(core.Customer)
+		//这里将客户容器清空，防止后续 GORM 误操作
+
+		// 5. 再更新申请单状态（使用结构体方式）
+		now := time.Now()
+		app.Status = "Approved"
+		app.ApproverID = &approverID
+		app.ApprovalTime = &now
+
+		// 使用 Select 明确指定要更新的字段
+		if err := txAppRepo.Update(app, "status", "approver_id", "approval_time"); err != nil {
+			return err
+		}
+
+		return nil
+
+	})
 }

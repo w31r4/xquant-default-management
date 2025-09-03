@@ -56,7 +56,7 @@ func main() {
 	// 它们依赖于 Repositories 来获取和存储数据。
 	// 注意，userService 还需要 cfg 来读取 JWT 相关的配置（密钥和过期时间）。
 	userService := service.NewUserService(userRepository, cfg)
-	appService := service.NewApplicationService(appRepository, customerRepository)
+	appService := service.NewApplicationService(db, appRepository, customerRepository)
 
 	// --- API 接口层 (Handlers) ---
 	// Handlers 是最外层的组件，负责处理 HTTP 请求和响应，是应用的“前台接待”。
@@ -129,6 +129,13 @@ func main() {
 				// 2. 针对此路由单独应用的 RBACMiddleware (保安 B - 授权)，确保用户角色是 'Applicant'。
 				// 中间件会按照定义的顺序依次执行。
 				applications.POST("", middleware.RBACMiddleware("Applicant"), appHandler.CreateApplication)
+				// --- 新增审批路由 ---
+				// 将审批相关的路由分组到 /review 下，更符合 RESTful 风格
+				review := applications.Group("/review")
+				review.Use(middleware.RBACMiddleware("Approver")) // 只有 Approver 角色能访问
+				{
+					review.POST("/approve", appHandler.ApproveApplication)
+				}
 			}
 		}
 	}

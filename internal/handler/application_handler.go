@@ -84,3 +84,42 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 	// 返回 201 Created 状态码，表示资源创建成功，并在响应体中包含新创建的申请信息。
 	c.JSON(http.StatusCreated, res)
 }
+
+// ApproveApplication 处理批准申请的请求
+func (h *ApplicationHandler) ApproveApplication(c *gin.Context) {
+	var req api.ApproveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 从请求体解析 ApplicationID
+	appID, err := uuid.Parse(req.ApplicationID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application ID format"})
+		return
+	}
+
+	// 从认证中间件的上下文中获取审核人 ID
+	approverIDVal, _ := c.Get("userID")
+	approverID, ok := approverIDVal.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	err = h.appService.ApproveApplication(appID, approverID)
+	if err != nil {
+		switch err.Error() {
+		case "application not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "application is not in pending state":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to approve application"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Application approved successfully"})
+}

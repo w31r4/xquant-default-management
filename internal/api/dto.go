@@ -78,3 +78,8 @@ type ApplicationResponse struct {
 	// ApplicationTime 是申请被提交的时间。
 	ApplicationTime time.Time `json:"application_time"`
 }
+
+// ApproveRequest 代表审核操作的请求体
+type ApproveRequest struct {
+	ApplicationID string `json:"application_id" binding:"required,uuid"`
+}

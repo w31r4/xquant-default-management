@@ -19,6 +19,9 @@ type ApplicationRepository interface {
 	// FindPendingByCustomerID 根据客户 ID 查找一个状态为 "Pending" 的申请。
 	// 如果没有找到，它会返回 (nil, nil)，表示“未找到”是一个正常的业务场景，而非错误。
 	FindPendingByCustomerID(customerID uuid.UUID) (*core.DefaultApplication, error)
+	GetByID(id uuid.UUID) (*core.DefaultApplication, error) // 新增
+	// Update(app *core.DefaultApplication, updates map[string]interface{}) error // 修改接口
+	Update(app *core.DefaultApplication, fields ...string) error
 }
 
 // applicationRepository 是 ApplicationRepository 接口的具体实现。
@@ -42,7 +45,7 @@ func (r *applicationRepository) Create(app *core.DefaultApplication) error {
 // FindPendingByCustomerID 在数据库中查找特定客户的、状态为 "Pending" 的违约申请。
 func (r *applicationRepository) FindPendingByCustomerID(customerID uuid.UUID) (*core.DefaultApplication, error) {
 	var app core.DefaultApplication
-	
+
 	// 使用 GORM 构建查询，条件为 customer_id 匹配且 status 为 "Pending"。
 	// First() 方法会查找第一条匹配的记录。
 	err := r.db.Where("customer_id = ? AND status = ?", customerID, "Pending").First(&app).Error
@@ -58,4 +61,22 @@ func (r *applicationRepository) FindPendingByCustomerID(customerID uuid.UUID) (*
 	// 如果 err 不是 gorm.ErrRecordNotFound，那它可能是一个真实的数据库连接错误或查询语法错误，
 	// 这种情况下，我们需要将错误和找到的记录（可能不完整）一起返回给上层处理。
 	return &app, err
+}
+
+// GetByID 根据 ID 获取一个申请单，并预加载关联的客户信息
+func (r *applicationRepository) GetByID(id uuid.UUID) (*core.DefaultApplication, error) {
+	var app core.DefaultApplication
+	// Preload("Customer") 会自动执行一次额外的查询来填充 Customer 字段
+	err := r.db.Preload("Customer").First(&app, id).Error
+	return &app, err
+}
+
+// Update 方法现在只更新传入的 map 中指定的字段
+// func (r *applicationRepository) Update(app *core.DefaultApplication, updates map[string]interface{}) error {
+// 	return r.db.Model(app).Updates(updates).Error
+// }
+
+// Update 只更新指定的字段
+func (r *applicationRepository) Update(app *core.DefaultApplication, fields ...string) error {
+	return r.db.Model(app).Select(fields).Updates(app).Error
 }
