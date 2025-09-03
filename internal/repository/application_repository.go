@@ -10,6 +10,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// QueryParams 定义了查询申请的过滤条件
+type QueryParams struct {
+	CustomerName *string // 使用指针以区分 "未提供" 和 "空字符串"
+	Status       *string
+	Page         int
+	PageSize     int
+}
+
 // ApplicationRepository 定义了与 DefaultApplication 模型相关的数据操作接口。
 // Service 层将依赖此接口，而不是具体的实现，以实现解耦。
 type ApplicationRepository interface {
@@ -22,7 +30,8 @@ type ApplicationRepository interface {
 	GetByID(id uuid.UUID) (*core.DefaultApplication, error) // 新增
 	// Update(app *core.DefaultApplication, updates map[string]interface{}) error // 修改接口
 	Update(app *core.DefaultApplication, fields ...string) error
-	FindAllByStatus(status string) ([]core.DefaultApplication, error) // 新增
+	FindAllByStatus(status string) ([]core.DefaultApplication, error)     // 新增
+	FindAll(params QueryParams) ([]core.DefaultApplication, int64, error) // 新增
 
 }
 
@@ -89,4 +98,37 @@ func (r *applicationRepository) FindAllByStatus(status string) ([]core.DefaultAp
 	// 为了在列表中显示客户和申请人信息，我们必须在这里预加载它们
 	err := r.db.Preload("Customer").Preload("Applicant").Where("status = ?", status).Find(&apps).Error
 	return apps, err
+}
+
+// FindAll 根据多种条件查找申请单，并返回总数用于分页
+func (r *applicationRepository) FindAll(params QueryParams) ([]core.DefaultApplication, int64, error) {
+	var apps []core.DefaultApplication
+	var total int64
+
+	// 创建基础查询，并预加载所需信息
+	query := r.db.Model(&core.DefaultApplication{}).
+		Preload("Customer").
+		Preload("Applicant").
+		Preload("Approver")
+
+	// 动态构建 WHERE 条件
+	if params.CustomerName != nil && *params.CustomerName != "" {
+		// 使用 Joins 来根据关联表的字段进行过滤
+		query = query.Joins("Customer").Where("Customer.name LIKE ?", "%"+*params.CustomerName+"%")
+	}
+	if params.Status != nil && *params.Status != "" {
+		query = query.Where("status = ?", *params.Status)
+	}
+
+	// 首先计算满足条件的总记录数 (在应用分页之前)
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 应用分页
+	offset := (params.Page - 1) * params.PageSize
+	err = query.Offset(offset).Limit(params.PageSize).Order("application_time desc").Find(&apps).Error
+
+	return apps, total, err
 }

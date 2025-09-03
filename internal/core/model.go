@@ -32,10 +32,12 @@ type User struct {
 // Customer 客户信息
 type Customer struct {
 	BaseModel
-	Name      string `gorm:"size:255;not null;uniqueIndex"`
-	Industry  string `gorm:"size:100;index"` // 行业
-	Region    string `gorm:"size:100;index"` // 区域
-	IsDefault bool   `gorm:"default:false;index"`
+	Name           string `gorm:"size:255;not null;uniqueIndex"`
+	Industry       string `gorm:"size:100;index"` // 行业
+	Region         string `gorm:"size:100;index"` // 区域
+	IsDefault      bool   `gorm:"default:false;index"`
+	LatestExtGrade string `gorm:"size:50"` // 新增：最新外部等级
+
 }
 
 // DefaultApplication 代表一条客户违约认定的申请记录。
@@ -60,6 +62,7 @@ type DefaultApplication struct {
 	// DefaultReason 提交违约认定的主要原因，是审批的重要依据。
 	DefaultReason   string `gorm:"type:text;not null"`
 	RejectionReason string `gorm:"type:text"` // 新增：用于存储拒绝原因
+	RebirthReason   string `gorm:"type:text"` // 新增：重生原因
 
 	// Remarks 申请人填写的额外备注信息 (可选)。
 	Remarks string `gorm:"type:text"`
@@ -72,6 +75,11 @@ type DefaultApplication struct {
 	ApproverID   *uuid.UUID `gorm:"type:uuid"`             // 审核人 ID, 使用指针类型以允许 NULL 值
 	Approver     *User      `gorm:"foreignKey:ApproverID"` // 关联到 User 模型
 	ApprovalTime *time.Time // 审核时间，使用指针类型以允许 NULL 值
+
+	// 新增：重生审批相关字段
+	RebirthApproverID   *uuid.UUID `gorm:"type:uuid"`
+	RebirthApprover     *User      `gorm:"foreignKey:RebirthApproverID"`
+	RebirthApprovalTime *time.Time
 
 	// ApplicationTime 申请被正式提交的时间戳。
 	ApplicationTime time.Time `gorm:"not null"`

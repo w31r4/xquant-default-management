@@ -57,12 +57,13 @@ func main() {
 	// 注意，userService 还需要 cfg 来读取 JWT 相关的配置（密钥和过期时间）。
 	userService := service.NewUserService(userRepository, cfg)
 	appService := service.NewApplicationService(db, appRepository, customerRepository)
-
+	queryService := service.NewQueryService(appRepository)
 	// --- API 接口层 (Handlers) ---
 	// Handlers 是最外层的组件，负责处理 HTTP 请求和响应，是应用的“前台接待”。
 	// 它们依赖于 Services 来执行具体的业务操作。
 	userHandler := handler.NewUserHandler(userService)
 	appHandler := handler.NewApplicationHandler(appService)
+	queryHandler := handler.NewQueryHandler(queryService)
 
 	// =========================================================================
 	// 4. 初始化 Web 引擎和注册路由 (Routing)
@@ -128,6 +129,8 @@ func main() {
 				// 1. 继承自父分组 `protected` 的 AuthMiddleware (保安 A - 认证)，确保用户已登录。
 				// 2. 针对此路由单独应用的 RBACMiddleware (保安 B - 授权)，确保用户角色是 'Applicant'。
 				// 中间件会按照定义的顺序依次执行。
+				applications.GET("", queryHandler.FindApplications)
+
 				applications.POST("", middleware.RBACMiddleware("Applicant"), appHandler.CreateApplication)
 				// 新增：Approver 查询待审批列表的端点
 				applications.GET("/pending", middleware.RBACMiddleware("Approver"), appHandler.GetPendingApplications)
@@ -139,6 +142,14 @@ func main() {
 					review.POST("/approve", appHandler.ApproveApplication)
 					review.POST("/reject", appHandler.RejectApplication) // 新增
 
+				}
+				// 新增：重生相关路由
+				rebirth := applications.Group("/rebirth")
+				{
+					// 假设 Applicant 可以发起重生申请
+					rebirth.POST("/apply", middleware.RBACMiddleware("Applicant"), appHandler.ApplyForRebirth)
+					// Approver 批准重生申请
+					rebirth.POST("/approve", middleware.RBACMiddleware("Approver"), appHandler.ApproveRebirth)
 				}
 			}
 		}

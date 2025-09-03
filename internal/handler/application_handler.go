@@ -176,3 +176,82 @@ func (h *ApplicationHandler) GetPendingApplications(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+// ...
+
+// ApplyForRebirth 处理发起重生申请的请求
+func (h *ApplicationHandler) ApplyForRebirth(c *gin.Context) {
+	var req api.RebirthApplyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	appID, err := uuid.Parse(req.ApplicationID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application ID format"})
+		return
+	}
+
+	applicantIDVal, _ := c.Get("userID")
+	applicantID, ok := applicantIDVal.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	err = h.appService.ApplyForRebirth(appID, applicantID, req.RebirthReason)
+	if err != nil {
+		// 根据 Service 返回的错误信息，返回不同的 HTTP 状态码
+		switch err.Error() {
+		case "application not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "only approved applications can apply for rebirth":
+			// 409 Conflict 表示请求与服务器当前状态冲突
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			// 对于其他未知错误，返回 500 服务器内部错误
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to submit rebirth application"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Rebirth application submitted successfully"})
+}
+
+// ApproveRebirth 处理批准重生申请的请求
+func (h *ApplicationHandler) ApproveRebirth(c *gin.Context) {
+	var req api.RebirthApproveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	appID, err := uuid.Parse(req.ApplicationID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application ID format"})
+		return
+	}
+
+	approverIDVal, _ := c.Get("userID")
+	approverID, ok := approverIDVal.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	err = h.appService.ApproveRebirth(appID, approverID)
+	if err != nil {
+		switch err.Error() {
+		case "application not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "application is not pending for rebirth approval":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to approve rebirth"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Rebirth approved successfully"})
+}

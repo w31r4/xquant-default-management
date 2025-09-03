@@ -20,8 +20,7 @@ type CustomerRepository interface {
 	GetByName(name string) (*core.Customer, error)
 	// GetByID 根据客户的 UUID 主键查找一个客户记录。
 	GetByID(id uuid.UUID) (*core.Customer, error)
-	Update(customer *core.Customer) error // 新增
-
+	Update(app *core.Customer, fields ...string) error
 }
 
 // customerRepository 是 CustomerRepository 接口的具体实现。
@@ -61,7 +60,12 @@ func (r *customerRepository) GetByID(id uuid.UUID) (*core.Customer, error) {
 	return &customer, err
 }
 
-func (r *customerRepository) Update(customer *core.Customer) error {
-	// 同样使用 Updates 来避免 Save 的副作用
-	return r.db.Model(&customer).Updates(customer).Error
+// func (r *customerRepository) Update(customer *core.Customer) error {
+// 	// 同样使用 Updates 来避免 Save 的副作用
+// 	return r.db.Model(&customer).Updates(customer).Error
+// }
+
+// Update 只更新指定的字段
+func (r *customerRepository) Update(app *core.Customer, fields ...string) error {
+	return r.db.Model(app).Select(fields).Updates(app).Error
 }

@@ -90,3 +90,37 @@ type RejectRequest struct {
 	ApplicationID   string `json:"application_id" binding:"required,uuid"`
 	RejectionReason string `json:"rejection_reason" binding:"required"`
 }
+
+// RebirthApplyRequest 代表发起重生申请的请求体
+type RebirthApplyRequest struct {
+	ApplicationID string `json:"application_id" binding:"required,uuid"`
+	// 使用 oneof 验证，确保重生原因来自预设列表
+	RebirthReason string `json:"rebirth_reason" binding:"required,oneof=正常结算后解除 '在其他金融机构违约解除，或外部评级显示为非违约级别' 计提比例小于设置界限 '连续 12 个月内按时支付本金和利息' '客户的还款意愿和还款能力明显好转，已偿付各项逾期本金、逾期利息和其他费用（包括罚息等），且连续 12 个月内按时支付本金、利息' '导致违约的关联集团内其他发生违约的客户已经违约重生，解除关联成员的违约设定'"`
+}
+
+// RebirthApproveRequest 代表批准重生申请的请求体
+type RebirthApproveRequest struct {
+	ApplicationID string `json:"application_id" binding:"required,uuid"`
+}
+
+// ApplicationDetailResponse 是一个更详细的响应 DTO，满足查询需求
+type ApplicationDetailResponse struct {
+	ID              string     `json:"id"`
+	CustomerName    string     `json:"customer_name"`
+	LatestExtGrade  string     `json:"latest_ext_grade,omitempty"`
+	Status          string     `json:"status"`
+	DefaultReason   string     `json:"default_reason"`
+	Severity        string     `json:"severity"`
+	ApplicantName   string     `json:"applicant_name,omitempty"`
+	ApplicationTime time.Time  `json:"application_time"`
+	ApproverName    *string    `json:"approver_name,omitempty"`
+	ApprovalTime    *time.Time `json:"approval_time,omitempty"`
+	RebirthReason   string     `json:"rebirth_reason,omitempty"`
+}
+
+// PaginatedApplicationsResponse 是包含分页信息的响应体
+type PaginatedApplicationsResponse struct {
+	Total int64                       `json:"total"`
+	Page  int                         `json:"page"`
+	Data  []ApplicationDetailResponse `json:"data"`
+}

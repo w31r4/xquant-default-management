@@ -18,10 +18,11 @@ import (
 type ApplicationService interface {
 	// CreateApplication 定义了创建新违约申请的业务流程。
 	CreateApplication(customerName, severity, reason, remarks string, applicantID uuid.UUID) (*core.DefaultApplication, error)
-	ApproveApplication(appID, approverID uuid.UUID) error               // ApplicationService 接口增加 ApproveApplication 方法
-	RejectApplication(appID, approverID uuid.UUID, reason string) error // 新增
-	GetPendingApplications() ([]core.DefaultApplication, error)         // 新增
-
+	ApproveApplication(appID, approverID uuid.UUID) error                     // ApplicationService 接口增加 ApproveApplication 方法
+	RejectApplication(appID, approverID uuid.UUID, reason string) error       // 新增
+	GetPendingApplications() ([]core.DefaultApplication, error)               // 新增
+	ApplyForRebirth(appID, applicantID uuid.UUID, rebirthReason string) error // 新增
+	ApproveRebirth(appID, approverID uuid.UUID) error                         // 新增
 }
 
 // applicationService 是 ApplicationService 接口的具体实现。
@@ -132,7 +133,7 @@ func (s *applicationService) ApproveApplication(appID, approverID uuid.UUID) err
 
 		// 4. 先更新客户状态
 		customer.IsDefault = true
-		if err := txCustomerRepo.Update(customer); err != nil {
+		if err := txCustomerRepo.Update(customer, "IsDefault"); err != nil {
 			return err // 如果这里失败，事务回滚
 		}
 		app.Customer = core.Customer{} // 或者 app.Customer = *new(core.Customer)
@@ -199,4 +200,78 @@ func (s *applicationService) RejectApplication(appID, approverID uuid.UUID, reas
 // GetPendingApplications 获取所有待处理的申请
 func (s *applicationService) GetPendingApplications() ([]core.DefaultApplication, error) {
 	return s.appRepo.FindAllByStatus("Pending")
+}
+
+// ...
+
+// ApplyForRebirth 为一个已违约的申请发起重生
+func (s *applicationService) ApplyForRebirth(appID, applicantID uuid.UUID, rebirthReason string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		txAppRepo := repository.NewApplicationRepository(tx)
+
+		app, err := txAppRepo.GetByID(appID)
+		if err != nil {
+			// 如果是 GORM 经典的 "没找到" 错误，我们就把它翻译成一个更业务化的错误
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("application not found")
+			}
+			// 如果是其他数据库错误，直接返回
+			return err
+		}
+
+		// 业务规则：只有 "Approved" 状态的申请才能发起重生
+		if app.Status != "Approved" {
+			return errors.New("only approved applications can apply for rebirth")
+		}
+
+		app.Status = "RebirthPending"
+		app.RebirthReason = rebirthReason
+
+		return txAppRepo.Update(app, "Status", "RebirthReason")
+	})
+}
+
+// ApproveRebirth 批准一个重生申请
+func (s *applicationService) ApproveRebirth(appID, approverID uuid.UUID) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		txAppRepo := repository.NewApplicationRepository(tx)
+		txCustomerRepo := repository.NewCustomerRepository(tx)
+
+		app, err := txAppRepo.GetByID(appID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("application not found")
+			}
+			return err
+		}
+
+		// 业务规则：只有 "RebirthPending" 状态的申请才能被批准重生
+		if app.Status != "RebirthPending" {
+			return errors.New("application is not pending for rebirth approval")
+		}
+
+		// 1. 更新申请单状态
+		now := time.Now()
+		app.Status = "Reborn"
+		app.RebirthApproverID = &approverID
+		app.RebirthApprovalTime = &now
+		updateAppFields := []string{"Status", "RebirthApproverID", "RebirthApprovalTime"}
+		if err := txAppRepo.Update(app, updateAppFields...); err != nil {
+			return err
+		}
+
+		// 2. 更新客户状态
+		// 注意：txAppRepo.GetByID 已经 Preload 了 Customer，所以我们不需要重新查询
+		if app.Customer.ID == uuid.Nil {
+			// 这是一个防御性检查，防止 Preload 失败
+			return errors.New("customer data is missing for this application")
+		}
+		customer := &app.Customer
+		customer.IsDefault = false
+		if err := txCustomerRepo.Update(customer, "IsDefault"); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
