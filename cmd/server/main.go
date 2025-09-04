@@ -50,6 +50,7 @@ func main() {
 	userRepository := repository.NewUserRepository(db)
 	customerRepository := repository.NewCustomerRepository(db)
 	appRepository := repository.NewApplicationRepository(db)
+	statsRepository := repository.NewStatisticsRepository(db) // 新增：统计 Repository
 
 	// --- 业务逻辑层 (Services) ---
 	// Services 是应用的核心，负责编排业务流程，是决策的“项目经理”。
@@ -58,12 +59,15 @@ func main() {
 	userService := service.NewUserService(userRepository, cfg)
 	appService := service.NewApplicationService(db, appRepository, customerRepository)
 	queryService := service.NewQueryService(appRepository)
+	statsService := service.NewStatisticsService(statsRepository) // 新增：统计 Service
+
 	// --- API 接口层 (Handlers) ---
 	// Handlers 是最外层的组件，负责处理 HTTP 请求和响应，是应用的“前台接待”。
 	// 它们依赖于 Services 来执行具体的业务操作。
 	userHandler := handler.NewUserHandler(userService)
 	appHandler := handler.NewApplicationHandler(appService)
 	queryHandler := handler.NewQueryHandler(queryService)
+	statsHandler := handler.NewStatisticsHandler(statsService) // 新增：统计 Handler
 
 	// =========================================================================
 	// 4. 初始化 Web 引擎和注册路由 (Routing)
@@ -150,6 +154,23 @@ func main() {
 					rebirth.POST("/apply", middleware.RBACMiddleware("Applicant"), appHandler.ApplyForRebirth)
 					// Approver 批准重生申请
 					rebirth.POST("/approve", middleware.RBACMiddleware("Approver"), appHandler.ApproveRebirth)
+				}
+				// --- 新增：统计路由 ---
+				// 将所有统计相关的端点都组织在这个分组下
+				statistics := protected.Group("/statistics")
+				{
+					// 违约统计
+					defaults := statistics.Group("/defaults")
+					{
+						defaults.GET("/by-industry", statsHandler.GetDefaultsByIndustry)
+						defaults.GET("/by-region", statsHandler.GetDefaultsByRegion)
+					}
+					// 重生统计
+					rebirths := statistics.Group("/rebirths")
+					{
+						rebirths.GET("/by-industry", statsHandler.GetRebirthsByIndustry)
+						rebirths.GET("/by-region", statsHandler.GetRebirthsByRegion)
+					}
 				}
 			}
 		}

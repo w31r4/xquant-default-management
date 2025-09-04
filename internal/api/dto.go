@@ -124,3 +124,11 @@ type PaginatedApplicationsResponse struct {
 	Page  int                         `json:"page"`
 	Data  []ApplicationDetailResponse `json:"data"`
 }
+
+// StatisticsResponse 是用于统计 API 的标准响应体
+type StatisticsResponse struct {
+	Dimension  string   `json:"dimension"`             // 维度名称 (例如 "Technology")
+	Count      int64    `json:"count"`                 // 计数
+	Percentage float64  `json:"percentage"`            // 占比 (例如 0.25 代表 25%)
+	GrowthRate *float64 `json:"growth_rate,omitempty"` // 同比增长率 (指针以表示可能无法计算)
+}
