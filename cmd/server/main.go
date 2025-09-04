@@ -114,7 +114,13 @@ func main() {
 		// 这些路由不需要用户登录即可访问。
 		apiV1.POST("/register", userHandler.Register)
 		apiV1.POST("/login", userHandler.Login)
-		apiV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger/zh/swagger.json")))
+		// 将 swagger.json 文件托管在一个不会与 UI 路由冲突的独立端点上
+		// 这会创建路由 /api/v1/swagger.json
+		apiV1.StaticFile("swagger.json", "./docs/zh/swagger.json")
+
+		// 配置 Swagger UI 从上述路径加载 API 定义。
+		// "../swagger.json" 会被解析为 /api/v1/swagger.json
+		apiV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("../swagger.json")))
 
 		// --- 受保护的路由组 (Protected Routes) ---
 		// 创建一个子分组，用于存放所有需要用户认证才能访问的接口。
