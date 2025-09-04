@@ -202,8 +202,6 @@ func (s *applicationService) GetPendingApplications() ([]core.DefaultApplication
 	return s.appRepo.FindAllByStatus("Pending")
 }
 
-// ...
-
 // ApplyForRebirth 为一个已违约的申请发起重生
 func (s *applicationService) ApplyForRebirth(appID, applicantID uuid.UUID, rebirthReason string) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {

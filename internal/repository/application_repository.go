@@ -100,35 +100,56 @@ func (r *applicationRepository) FindAllByStatus(status string) ([]core.DefaultAp
 	return apps, err
 }
 
-// FindAll 根据多种条件查找申请单，并返回总数用于分页
-func (r *applicationRepository) FindAll(params QueryParams) ([]core.DefaultApplication, int64, error) {
-	var apps []core.DefaultApplication
-	var total int64
+// buildFilteredQuery 是一个私有辅助函数，用于构建带过滤条件的查询对象
+// 它不执行查询，只返回一个“准备好”的 gorm.DB 对象
+func (r *applicationRepository) buildFilteredQuery(params QueryParams) *gorm.DB {
+	// 1. 创建基础查询
+	query := r.db.Model(&core.DefaultApplication{})
 
-	// 创建基础查询，并预加载所需信息
-	query := r.db.Model(&core.DefaultApplication{}).
-		Preload("Customer").
-		Preload("Applicant").
-		Preload("Approver")
-
-	// 动态构建 WHERE 条件
+	// 2. 动态构建 WHERE 条件
 	if params.CustomerName != nil && *params.CustomerName != "" {
-		// 使用 Joins 来根据关联表的字段进行过滤
-		query = query.Joins("Customer").Where("Customer.name LIKE ?", "%"+*params.CustomerName+"%")
+		// 使用您提供的、更健壮的子查询方式
+		query = query.Where("customer_id IN (?)",
+			r.db.Model(&core.Customer{}).Select("id").Where("name LIKE ?", "%"+*params.CustomerName+"%"))
 	}
 	if params.Status != nil && *params.Status != "" {
 		query = query.Where("status = ?", *params.Status)
 	}
 
-	// 首先计算满足条件的总记录数 (在应用分页之前)
-	err := query.Count(&total).Error
+	return query
+}
+
+// FindAll 根据多种条件查找申请单，并返回总数用于分页 (重构后的版本)
+func (r *applicationRepository) FindAll(params QueryParams) ([]core.DefaultApplication, int64, error) {
+	var apps []core.DefaultApplication
+	var total int64
+
+	// 1. 使用辅助函数构建带过滤条件的查询对象
+	filteredQuery := r.buildFilteredQuery(params)
+
+	// 2. 在过滤后的查询上执行 Count 操作
+	// 这一步会生成并执行一条独立的 COUNT SQL
+	err := filteredQuery.Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// 应用分页
+	// 如果总数为 0，就不需要执行后续的 Find 查询了，可以直接返回
+	if total == 0 {
+		return apps, total, nil
+	}
+
+	// 3. 在过滤后的查询上继续添加分页、排序和预加载，并执行 Find 操作
+	// 这一步会生成并执行另一条独立的 SELECT SQL
 	offset := (params.Page - 1) * params.PageSize
-	err = query.Offset(offset).Limit(params.PageSize).Order("application_time desc").Find(&apps).Error
+	err = filteredQuery.
+		Preload("Customer").
+		Preload("Applicant").
+		Preload("Approver").
+		Offset(offset).
+		Limit(params.PageSize).
+		Order("application_time desc").
+		Find(&apps).Error
 
 	return apps, total, err
 }
