@@ -13,8 +13,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	_ "xquant-default-management/docs" // swag anootation
+
+	swaggerFiles "github.com/swaggo/files"     // swagger embed files
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
+// @title           Swagger Example API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apiKey  ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	// =========================================================================
 	// 1. 初始化配置 (Initialization)
@@ -91,6 +114,7 @@ func main() {
 		// 这些路由不需要用户登录即可访问。
 		apiV1.POST("/register", userHandler.Register)
 		apiV1.POST("/login", userHandler.Login)
+		apiV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger/zh/swagger.json")))
 
 		// --- 受保护的路由组 (Protected Routes) ---
 		// 创建一个子分组，用于存放所有需要用户认证才能访问的接口。

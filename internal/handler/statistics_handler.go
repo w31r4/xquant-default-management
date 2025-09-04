@@ -72,28 +72,68 @@ func (h *StatisticsHandler) getStatistics(c *gin.Context, dimension, status stri
 
 // --- 按行业 (Industry) 统计 ---
 
-// GetDefaultsByIndustry 处理 GET /.../defaults/by-industry 的请求
-// 统计指定年份按行业划分的【违约】数量、占比和趋势
+// GetDefaultsByIndustry godoc
+// @Summary      Get default statistics by industry
+// @Description  Get default statistics by industry for a given year. Can include historical data.
+// @Tags         Statistics
+// @Produce      json
+// @Param        year                query     int   true  "Year"
+// @Param        include_historical  query     bool  false  "Include historical data"
+// @Success      200                 {array}   api.StatisticsResponse
+// @Failure      400                 {object}  api.ErrorResponse
+// @Failure      500                 {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /statistics/defaults/by-industry [get]
 func (h *StatisticsHandler) GetDefaultsByIndustry(c *gin.Context) {
 	h.getStatistics(c, "industry", "Approved")
 }
 
-// GetRebirthsByIndustry 处理 GET /.../rebirths/by-industry 的请求
-// 统计指定年份按行业划分的【重生】数量、占比和趋势
+// GetRebirthsByIndustry godoc
+// @Summary      Get rebirth statistics by industry
+// @Description  Get rebirth statistics by industry for a given year. Can include historical data.
+// @Tags         Statistics
+// @Produce      json
+// @Param        year                query     int   true  "Year"
+// @Param        include_historical  query     bool  false  "Include historical data"
+// @Success      200                 {array}   api.StatisticsResponse
+// @Failure      400                 {object}  api.ErrorResponse
+// @Failure      500                 {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /statistics/rebirths/by-industry [get]
 func (h *StatisticsHandler) GetRebirthsByIndustry(c *gin.Context) {
 	h.getStatistics(c, "industry", "Reborn")
 }
 
 // --- 按区域 (Region) 统计 ---
 
-// GetDefaultsByRegion 处理 GET /.../defaults/by-region 的请求
-// 统计指定年份按区域划分的【违约】数量、占比和趋势
+// GetDefaultsByRegion godoc
+// @Summary      Get default statistics by region
+// @Description  Get default statistics by region for a given year. Can include historical data.
+// @Tags         Statistics
+// @Produce      json
+// @Param        year                query     int   true  "Year"
+// @Param        include_historical  query     bool  false  "Include historical data"
+// @Success      200                 {array}   api.StatisticsResponse
+// @Failure      400                 {object}  api.ErrorResponse
+// @Failure      500                 {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /statistics/defaults/by-region [get]
 func (h *StatisticsHandler) GetDefaultsByRegion(c *gin.Context) {
 	h.getStatistics(c, "region", "Approved")
 }
 
-// GetRebirthsByRegion 处理 GET /.../rebirths/by-region 的请求
-// 统计指定年份按区域划分的【重生】数量、占比和趋势
+// GetRebirthsByRegion godoc
+// @Summary      Get rebirth statistics by region
+// @Description  Get rebirth statistics by region for a given year. Can include historical data.
+// @Tags         Statistics
+// @Produce      json
+// @Param        year                query     int   true  "Year"
+// @Param        include_historical  query     bool  false  "Include historical data"
+// @Success      200                 {array}   api.StatisticsResponse
+// @Failure      400                 {object}  api.ErrorResponse
+// @Failure      500                 {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /statistics/rebirths/by-region [get]
 func (h *StatisticsHandler) GetRebirthsByRegion(c *gin.Context) {
 	h.getStatistics(c, "region", "Reborn")
 }

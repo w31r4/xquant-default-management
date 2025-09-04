@@ -132,3 +132,13 @@ type StatisticsResponse struct {
 	Percentage float64  `json:"percentage"`            // 占比 (例如 0.25 代表 25%)
 	GrowthRate *float64 `json:"growth_rate,omitempty"` // 同比增长率 (指针以表示可能无法计算)
 }
+
+// ErrorResponse is a generic error response
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// SuccessResponse is a generic success response for messages
+type SuccessResponse struct {
+	Message string `json:"message"`
+}

@@ -1,0 +1,710 @@
+basePath: /api/v1
+definitions:
+  api.ApplicationDetailResponse:
+    properties:
+      applicant_name:
+        type: string
+      application_time:
+        type: string
+      approval_time:
+        type: string
+      approver_name:
+        type: string
+      customer_name:
+        type: string
+      default_reason:
+        type: string
+      id:
+        type: string
+      latest_ext_grade:
+        type: string
+      rebirth_reason:
+        type: string
+      severity:
+        type: string
+      status:
+        type: string
+    type: object
+  api.ApplicationResponse:
+    properties:
+      applicant_name:
+        description: |-
+          ApplicantID 是提交此申请的用户的 ID。
+          ApplicantID string `json:"applicant_id"`
+        type: string
+      application_time:
+        description: ApplicationTime 是申请被提交的时间。
+        type: string
+      customer_name:
+        description: CustomerName 是该申请关联的客户名称。
+        type: string
+      id:
+        description: ID 是违约申请的唯一标识符。
+        type: string
+      severity:
+        description: Severity 是违约事件的严重等级。
+        type: string
+      status:
+        description: Status 是申请的当前状态 (例如："Pending")。
+        type: string
+    type: object
+  api.ApproveRequest:
+    properties:
+      application_id:
+        type: string
+    required:
+    - application_id
+    type: object
+  api.CreateApplicationRequest:
+    properties:
+      customer_name:
+        description: |-
+          CustomerName 是申请所针对的客户名称。
+          验证规则：必填 (required)。
+        type: string
+      reason:
+        description: |-
+          Reason 是提交违约申请的主要原因。
+          验证规则：必填 (required)。
+        type: string
+      remarks:
+        description: Remarks 是申请的附加备注信息 (可选字段)。
+        type: string
+      severity:
+        description: |-
+          Severity 是违约事件的严重等级。
+          验证规则：必填 (required)，且值必须是 "High", "Medium", "Low" 三者之一。
+        enum:
+        - High
+        - Medium
+        - Low
+        type: string
+    required:
+    - customer_name
+    - reason
+    - severity
+    type: object
+  api.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.LoginRequest:
+    properties:
+      password:
+        description: |-
+          Password 是用于登录的密码。
+          验证规则：必填 (required)。
+        type: string
+      username:
+        description: |-
+          Username 是用于登录的用户名。
+          验证规则：必填 (required)。
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  api.LoginResponse:
+    properties:
+      token:
+        description: Token 是一个 JWT (JSON Web Token)，客户端后续需要用它来进行身份认证。
+        type: string
+    type: object
+  api.PaginatedApplicationsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api.ApplicationDetailResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  api.RebirthApplyRequest:
+    properties:
+      application_id:
+        type: string
+      rebirth_reason:
+        description: 使用 oneof 验证，确保重生原因来自预设列表
+        enum:
+        - 正常结算后解除
+        - 在其他金融机构违约解除，或外部评级显示为非违约级别
+        - 计提比例小于设置界限
+        - 连续 12 个月内按时支付本金和利息
+        - 客户的还款意愿和还款能力明显好转，已偿付各项逾期本金、逾期利息和其他费用（包括罚息等），且连续 12 个月内按时支付本金、利息
+        - 导致违约的关联集团内其他发生违约的客户已经违约重生，解除关联成员的违约设定
+        type: string
+    required:
+    - application_id
+    - rebirth_reason
+    type: object
+  api.RebirthApproveRequest:
+    properties:
+      application_id:
+        type: string
+    required:
+    - application_id
+    type: object
+  api.RegisterRequest:
+    properties:
+      password:
+        description: |-
+          Password 是用户注册时设置的密码。
+          验证规则：必填 (required)，最小长度为 6 个字符 (min=6)。
+        minLength: 6
+        type: string
+      role:
+        description: |-
+          Role 是用户注册时指定的角色。
+          验证规则：必填 (required)，且值必须是 "Applicant" 或 "Approver" 两者之一 (oneof=Applicant Approver)。
+        enum:
+        - Applicant
+        - Approver
+        type: string
+      username:
+        description: |-
+          Username 是用户注册时期望的用户名。
+          验证规则：必填 (required)，最小长度为 4 个字符 (min=4)。
+        minLength: 4
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+  api.RejectRequest:
+    properties:
+      application_id:
+        type: string
+      rejection_reason:
+        type: string
+    required:
+    - application_id
+    - rejection_reason
+    type: object
+  api.StatisticsResponse:
+    properties:
+      count:
+        description: 计数
+        type: integer
+      dimension:
+        description: 维度名称 (例如 "Technology")
+        type: string
+      growth_rate:
+        description: 同比增长率 (指针以表示可能无法计算)
+        type: number
+      percentage:
+        description: 占比 (例如 0.25 代表 25%)
+        type: number
+    type: object
+  api.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.UserResponse:
+    properties:
+      id:
+        description: ID 是用户的唯一标识符 (UUID 格式的字符串)。
+        type: string
+      role:
+        description: Role 是用户的角色。
+        type: string
+      username:
+        description: Username 是用户的名称。
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server celler server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /applications:
+    get:
+      description: Find applications with optional filters for customer name and status,
+        with pagination support.
+      parameters:
+      - description: Customer Name
+        in: query
+        name: customer_name
+        type: string
+      - description: Status
+        enum:
+        - Pending
+        - Approved
+        - Rejected
+        - Reborn
+        in: query
+        name: status
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.PaginatedApplicationsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Find applications
+      tags:
+      - Applications
+    post:
+      consumes:
+      - application/json
+      description: Create a new default application for a customer
+      parameters:
+      - description: Application info
+        in: body
+        name: application
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ApplicationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new default application
+      tags:
+      - Applications
+  /applications/pending:
+    get:
+      description: Get a list of all pending default applications for approval
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.ApplicationResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get pending applications
+      tags:
+      - Applications
+  /applications/rebirth/apply:
+    post:
+      consumes:
+      - application/json
+      description: Submit an application for rebirth for an approved default application
+      parameters:
+      - description: Rebirth apply info
+        in: body
+        name: rebirth_apply
+        required: true
+        schema:
+          $ref: '#/definitions/api.RebirthApplyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Apply for rebirth
+      tags:
+      - Applications
+  /applications/rebirth/approve:
+    post:
+      consumes:
+      - application/json
+      description: Approve a pending rebirth application
+      parameters:
+      - description: Rebirth approve info
+        in: body
+        name: rebirth_approve
+        required: true
+        schema:
+          $ref: '#/definitions/api.RebirthApproveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Approve a rebirth application
+      tags:
+      - Applications
+  /applications/review/approve:
+    post:
+      consumes:
+      - application/json
+      description: Approve a pending default application
+      parameters:
+      - description: Approval info
+        in: body
+        name: approval
+        required: true
+        schema:
+          $ref: '#/definitions/api.ApproveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Approve a default application
+      tags:
+      - Applications
+  /applications/review/reject:
+    post:
+      consumes:
+      - application/json
+      description: Reject a pending default application with a reason
+      parameters:
+      - description: Rejection info
+        in: body
+        name: rejection
+        required: true
+        schema:
+          $ref: '#/definitions/api.RejectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Reject a default application
+      tags:
+      - Applications
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password to get a token
+      parameters:
+      - description: User login info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/api.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: User login
+      tags:
+      - User
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with username, password and role
+      parameters:
+      - description: User registration info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/api.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: User registration
+      tags:
+      - User
+  /statistics/defaults/by-industry:
+    get:
+      description: Get default statistics by industry for a given year. Can include
+        historical data.
+      parameters:
+      - description: Year
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Include historical data
+        in: query
+        name: include_historical
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.StatisticsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get default statistics by industry
+      tags:
+      - Statistics
+  /statistics/defaults/by-region:
+    get:
+      description: Get default statistics by region for a given year. Can include
+        historical data.
+      parameters:
+      - description: Year
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Include historical data
+        in: query
+        name: include_historical
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.StatisticsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get default statistics by region
+      tags:
+      - Statistics
+  /statistics/rebirths/by-industry:
+    get:
+      description: Get rebirth statistics by industry for a given year. Can include
+        historical data.
+      parameters:
+      - description: Year
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Include historical data
+        in: query
+        name: include_historical
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.StatisticsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get rebirth statistics by industry
+      tags:
+      - Statistics
+  /statistics/rebirths/by-region:
+    get:
+      description: Get rebirth statistics by region for a given year. Can include
+        historical data.
+      parameters:
+      - description: Year
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Include historical data
+        in: query
+        name: include_historical
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.StatisticsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get rebirth statistics by region
+      tags:
+      - Statistics
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

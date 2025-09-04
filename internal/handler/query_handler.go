@@ -19,6 +19,19 @@ func NewQueryHandler(queryService service.QueryService) *QueryHandler {
 	return &QueryHandler{queryService: queryService}
 }
 
+// FindApplications godoc
+// @Summary      Find applications
+// @Description  Find applications with optional filters for customer name and status, with pagination support.
+// @Tags         Applications
+// @Produce      json
+// @Param        customer_name  query     string  false  "Customer Name"
+// @Param        status         query     string  false  "Status"  Enums(Pending, Approved, Rejected, Reborn)
+// @Param        page           query     int     false  "Page number"      default(1)
+// @Param        pageSize       query     int     false  "Page size"        default(10)
+// @Success      200            {object}  api.PaginatedApplicationsResponse
+// @Failure      500            {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications [get]
 func (h *QueryHandler) FindApplications(c *gin.Context) {
 	// 1. 解析查询参数 (Query Parameters)
 	var params repository.QueryParams

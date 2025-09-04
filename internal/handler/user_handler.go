@@ -16,7 +16,18 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-// Register 处理用户注册请求
+// Register godoc
+// @Summary      User registration
+// @Description  Register a new user with username, password and role
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        user  body      api.RegisterRequest  true  "User registration info"
+// @Success      201   {object}  api.UserResponse
+// @Failure      400   {object}  api.ErrorResponse
+// @Failure      409   {object}  api.ErrorResponse
+// @Failure      500   {object}  api.ErrorResponse
+// @Router       /register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req api.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,7 +55,17 @@ func (h *UserHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// Login 处理用户登录请求
+// Login godoc
+// @Summary      User login
+// @Description  Login with username and password to get a token
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        user  body      api.LoginRequest  true  "User login info"
+// @Success      200   {object}  api.LoginResponse
+// @Failure      400   {object}  api.ErrorResponse
+// @Failure      401   {object}  api.ErrorResponse
+// @Router       /login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req api.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

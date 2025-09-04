@@ -21,8 +21,20 @@ func NewApplicationHandler(appService service.ApplicationService) *ApplicationHa
 	return &ApplicationHandler{appService: appService}
 }
 
-// CreateApplication 处理创建新违约申请的 HTTP POST 请求。
-// 它负责解析请求、调用业务逻辑、处理错误并返回标准化的响应。
+// CreateApplication godoc
+// @Summary      Create a new default application
+// @Description  Create a new default application for a customer
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Param        application  body      api.CreateApplicationRequest  true  "Application info"
+// @Success      201          {object}  api.ApplicationResponse
+// @Failure      400          {object}  api.ErrorResponse
+// @Failure      404          {object}  api.ErrorResponse
+// @Failure      409          {object}  api.ErrorResponse
+// @Failure      500          {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications [post]
 func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 	// 声明一个用于接收请求体的 DTO (Data Transfer Object) 变量。
 	var req api.CreateApplicationRequest
@@ -85,7 +97,20 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// ApproveApplication 处理批准申请的请求
+// ApproveApplication godoc
+// @Summary      Approve a default application
+// @Description  Approve a pending default application
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Param        approval  body      api.ApproveRequest  true  "Approval info"
+// @Success      200       {object}  api.SuccessResponse
+// @Failure      400       {object}  api.ErrorResponse
+// @Failure      404       {object}  api.ErrorResponse
+// @Failure      409       {object}  api.ErrorResponse
+// @Failure      500       {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications/review/approve [post]
 func (h *ApplicationHandler) ApproveApplication(c *gin.Context) {
 	var req api.ApproveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -124,7 +149,20 @@ func (h *ApplicationHandler) ApproveApplication(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Application approved successfully"})
 }
 
-// RejectApplication 处理拒绝申请的请求
+// RejectApplication godoc
+// @Summary      Reject a default application
+// @Description  Reject a pending default application with a reason
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Param        rejection  body      api.RejectRequest  true  "Rejection info"
+// @Success      200        {object}  api.SuccessResponse
+// @Failure      400        {object}  api.ErrorResponse
+// @Failure      404        {object}  api.ErrorResponse
+// @Failure      409        {object}  api.ErrorResponse
+// @Failure      500        {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications/review/reject [post]
 func (h *ApplicationHandler) RejectApplication(c *gin.Context) {
 	var req api.RejectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -153,7 +191,15 @@ func (h *ApplicationHandler) RejectApplication(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Application rejected successfully"})
 }
 
-// GetPendingApplications 处理查询待审批列表的请求
+// GetPendingApplications godoc
+// @Summary      Get pending applications
+// @Description  Get a list of all pending default applications for approval
+// @Tags         Applications
+// @Produce      json
+// @Success      200  {array}   api.ApplicationResponse
+// @Failure      500  {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications/pending [get]
 func (h *ApplicationHandler) GetPendingApplications(c *gin.Context) {
 	apps, err := h.appService.GetPendingApplications()
 	if err != nil {
@@ -179,7 +225,20 @@ func (h *ApplicationHandler) GetPendingApplications(c *gin.Context) {
 
 // ...
 
-// ApplyForRebirth 处理发起重生申请的请求
+// ApplyForRebirth godoc
+// @Summary      Apply for rebirth
+// @Description  Submit an application for rebirth for an approved default application
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Param        rebirth_apply  body      api.RebirthApplyRequest  true  "Rebirth apply info"
+// @Success      200            {object}  api.SuccessResponse
+// @Failure      400            {object}  api.ErrorResponse
+// @Failure      404            {object}  api.ErrorResponse
+// @Failure      409            {object}  api.ErrorResponse
+// @Failure      500            {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications/rebirth/apply [post]
 func (h *ApplicationHandler) ApplyForRebirth(c *gin.Context) {
 	var req api.RebirthApplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -219,7 +278,20 @@ func (h *ApplicationHandler) ApplyForRebirth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Rebirth application submitted successfully"})
 }
 
-// ApproveRebirth 处理批准重生申请的请求
+// ApproveRebirth godoc
+// @Summary      Approve a rebirth application
+// @Description  Approve a pending rebirth application
+// @Tags         Applications
+// @Accept       json
+// @Produce      json
+// @Param        rebirth_approve  body      api.RebirthApproveRequest  true  "Rebirth approve info"
+// @Success      200              {object}  api.SuccessResponse
+// @Failure      400              {object}  api.ErrorResponse
+// @Failure      404              {object}  api.ErrorResponse
+// @Failure      409              {object}  api.ErrorResponse
+// @Failure      500              {object}  api.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /applications/rebirth/approve [post]
 func (h *ApplicationHandler) ApproveRebirth(c *gin.Context) {
 	var req api.RebirthApproveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
