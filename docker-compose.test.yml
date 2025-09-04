@@ -1,0 +1,16 @@
+services:
+  postgres_test:
+    image: postgres:13-alpine
+    container_name: xquant_postgres_test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: xquant_default_db_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_test_data:
